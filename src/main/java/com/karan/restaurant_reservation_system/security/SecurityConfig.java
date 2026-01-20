@@ -7,6 +7,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.*;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.web.cors.*;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -22,10 +25,48 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // ✅ CORS CONFIG (THIS IS THE KEY)
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration config = new CorsConfiguration();
+
+        // Allow Lovable + local dev
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "https://*.lovable.dev",
+                "https://*.lovable.app"
+        ));
+
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+        ));
+
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type"
+        ));
+
+        config.setExposedHeaders(List.of(
+                "Authorization"
+        ));
+
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
+    }
+
     @Bean
     public SecurityFilterChain filter(HttpSecurity http) throws Exception {
 
-        http.csrf(csrf -> csrf.disable())
+        http
+                // ✅ ENABLE CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(s ->
                         s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
