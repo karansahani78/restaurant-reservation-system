@@ -2,7 +2,6 @@ package com.karan.restaurant_reservation_system.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,22 +31,20 @@ public class SecurityConfig {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "https://lovable.dev",
-                "https://www.lovable.dev",
+        config.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "https://*.lovable.dev",
                 "https://*.lovable.app"
         ));
 
         config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
         ));
 
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
-
-        // ✅ REQUIRED FOR LOVABLE IFRAME
-        config.setAllowCredentials(false);
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
@@ -68,20 +65,18 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ ALWAYS ALLOW PREFLIGHT
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // ✅ PUBLIC
+                        // ✅ PUBLIC ENDPOINTS
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/reserve/**").permitAll()
 
-                        // ✅ OWNER ONLY
-                        .requestMatchers("/api/v1/admin/create-admin/**").hasRole("OWNER")
+                        // ✅ OWNER-ONLY ENDPOINTS
+                        .requestMatchers("/api/v1/admin/create-admin").hasRole("OWNER")
 
-                        // ✅ OWNER + ADMIN
+                        // ✅ ADMIN + OWNER ENDPOINTS
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
 
-                        .anyRequest().authenticated()
+                        // ✅ ALL OTHER REQUESTS DENIED
+                        .anyRequest().denyAll()
                 );
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

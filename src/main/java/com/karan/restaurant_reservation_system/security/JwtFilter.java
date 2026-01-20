@@ -31,37 +31,43 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = req.getRequestURI();
 
-        // ✅ PUBLIC ENDPOINTS (NO JWT EVER)
-        if (
-                "OPTIONS".equalsIgnoreCase(req.getMethod()) ||
-                        path.startsWith("/api/v1/auth") ||
-                        path.startsWith("/api/v1/reserve")
-        ) {
+        // ✅ PUBLIC ENDPOINTS (NO AUTH NEEDED)
+        if (path.startsWith("/api/v1/auth") ||
+                path.startsWith("/api/v1/reserve")) {
             chain.doFilter(req, res);
             return;
         }
 
+        // ✅ GET AUTHORIZATION HEADER
         String header = req.getHeader("Authorization");
 
         if (header == null || !header.startsWith("Bearer ")) {
+            // No token provided - let Spring Security handle it
             chain.doFilter(req, res);
             return;
         }
 
         try {
-            Claims claims = jwtUtil.parse(header.substring(7));
+            // ✅ PARSE JWT TOKEN
+            String token = header.substring(7);
+            Claims claims = jwtUtil.parse(token);
+
+            String email = claims.getSubject();
             String role = claims.get("role", String.class);
 
+            // ✅ CREATE AUTHENTICATION OBJECT
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(
-                            claims.getSubject(),
+                            email,
                             null,
                             List.of(new SimpleGrantedAuthority("ROLE_" + role))
                     );
 
+            // ✅ SET AUTHENTICATION IN SECURITY CONTEXT
             SecurityContextHolder.getContext().setAuthentication(auth);
 
         } catch (Exception e) {
+            // Invalid token - clear context
             SecurityContextHolder.clearContext();
         }
 
