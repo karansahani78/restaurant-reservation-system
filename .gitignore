@@ -18,6 +18,9 @@ target/
 *.iws
 *.iml
 *.ipr
+.git
+.gitignore
+node_modules
 
 ### NetBeans ###
 /nbproject/private/
