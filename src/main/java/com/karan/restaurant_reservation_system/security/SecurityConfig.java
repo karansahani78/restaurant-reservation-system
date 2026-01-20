@@ -2,6 +2,7 @@ package com.karan.restaurant_reservation_system.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,12 +39,12 @@ public class SecurityConfig {
         ));
 
         config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"
         ));
 
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(false); // ✅ IMPORTANT
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =
@@ -65,23 +66,24 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ PUBLIC ENDPOINTS (NO AUTH REQUIRED)
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/reserve", "/api/v1/reserve/**").permitAll()
+                        // ✅ ALWAYS ALLOW PREFLIGHT
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ OWNER-ONLY ENDPOINTS
+                        // ✅ PUBLIC APIs
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/reserve/**").permitAll()
+
+                        // ✅ OWNER ONLY
                         .requestMatchers("/api/v1/admin/create-admin").hasRole("OWNER")
 
-                        // ✅ ADMIN + OWNER ENDPOINTS
+                        // ✅ ADMIN + OWNER
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
 
-                        // ✅ DENY ALL OTHER REQUESTS
-                        .anyRequest().denyAll()
+                        // ❌ BLOCK EVERYTHING ELSE
+                        .anyRequest().authenticated()
                 );
 
-        // ✅ ADD JWT FILTER BEFORE SPRING SECURITY'S AUTH FILTER
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 }

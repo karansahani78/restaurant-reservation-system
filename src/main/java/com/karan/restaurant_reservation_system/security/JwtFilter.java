@@ -29,35 +29,40 @@ public class JwtFilter extends OncePerRequestFilter {
             HttpServletResponse res,
             FilterChain chain) throws ServletException, IOException {
 
-        // ✅ GET AUTHORIZATION HEADER FIRST
+        String path = req.getRequestURI();
+
+        // ✅ NEVER APPLY JWT TO PUBLIC ENDPOINTS
+        if (
+                "OPTIONS".equalsIgnoreCase(req.getMethod()) ||
+                        path.startsWith("/api/v1/auth") ||
+                        path.startsWith("/api/v1/reserve")
+        ) {
+            chain.doFilter(req, res);
+            return;
+        }
+
         String header = req.getHeader("Authorization");
 
-        if (header != null && header.startsWith("Bearer ")) {
-            try {
-                // ✅ PARSE JWT TOKEN
-                String token = header.substring(7);
-                Claims claims = jwtUtil.parse(token);
+        if (header == null || !header.startsWith("Bearer ")) {
+            chain.doFilter(req, res);
+            return;
+        }
 
-                String email = claims.getSubject();
-                String role = claims.get("role", String.class);
+        try {
+            Claims claims = jwtUtil.parse(header.substring(7));
+            String role = claims.get("role", String.class);
 
-                System.out.println("🔐 JWT Parsed - Email: " + email + ", Role: " + role);
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(
+                            claims.getSubject(),
+                            null,
+                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
 
-                // ✅ CREATE AUTHENTICATION OBJECT WITH ROLE
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                email,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+            SecurityContextHolder.getContext().setAuthentication(auth);
 
-                // ✅ SET AUTHENTICATION IN SECURITY CONTEXT
-                SecurityContextHolder.getContext().setAuthentication(auth);
-
-            } catch (Exception e) {
-                System.err.println("❌ JWT Parse Error: " + e.getMessage());
-                SecurityContextHolder.clearContext();
-            }
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
         }
 
         chain.doFilter(req, res);
