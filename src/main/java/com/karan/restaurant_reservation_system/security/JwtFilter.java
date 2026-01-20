@@ -29,46 +29,35 @@ public class JwtFilter extends OncePerRequestFilter {
             HttpServletResponse res,
             FilterChain chain) throws ServletException, IOException {
 
-        String path = req.getRequestURI();
-
-        // ✅ PUBLIC ENDPOINTS (NO AUTH NEEDED)
-        if (path.startsWith("/api/v1/auth") ||
-                path.startsWith("/api/v1/reserve")) {
-            chain.doFilter(req, res);
-            return;
-        }
-
-        // ✅ GET AUTHORIZATION HEADER
+        // ✅ GET AUTHORIZATION HEADER FIRST
         String header = req.getHeader("Authorization");
 
-        if (header == null || !header.startsWith("Bearer ")) {
-            // No token provided - let Spring Security handle it
-            chain.doFilter(req, res);
-            return;
-        }
+        if (header != null && header.startsWith("Bearer ")) {
+            try {
+                // ✅ PARSE JWT TOKEN
+                String token = header.substring(7);
+                Claims claims = jwtUtil.parse(token);
 
-        try {
-            // ✅ PARSE JWT TOKEN
-            String token = header.substring(7);
-            Claims claims = jwtUtil.parse(token);
+                String email = claims.getSubject();
+                String role = claims.get("role", String.class);
 
-            String email = claims.getSubject();
-            String role = claims.get("role", String.class);
+                System.out.println("🔐 JWT Parsed - Email: " + email + ", Role: " + role);
 
-            // ✅ CREATE AUTHENTICATION OBJECT
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            email,
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                    );
+                // ✅ CREATE AUTHENTICATION OBJECT WITH ROLE
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                email,
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                        );
 
-            // ✅ SET AUTHENTICATION IN SECURITY CONTEXT
-            SecurityContextHolder.getContext().setAuthentication(auth);
+                // ✅ SET AUTHENTICATION IN SECURITY CONTEXT
+                SecurityContextHolder.getContext().setAuthentication(auth);
 
-        } catch (Exception e) {
-            // Invalid token - clear context
-            SecurityContextHolder.clearContext();
+            } catch (Exception e) {
+                System.err.println("❌ JWT Parse Error: " + e.getMessage());
+                SecurityContextHolder.clearContext();
+            }
         }
 
         chain.doFilter(req, res);

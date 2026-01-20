@@ -65,9 +65,9 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ PUBLIC ENDPOINTS
+                        // ✅ PUBLIC ENDPOINTS (NO AUTH REQUIRED)
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/reserve/**").permitAll()
+                        .requestMatchers("/api/v1/reserve", "/api/v1/reserve/**").permitAll()
 
                         // ✅ OWNER-ONLY ENDPOINTS
                         .requestMatchers("/api/v1/admin/create-admin").hasRole("OWNER")
@@ -75,10 +75,11 @@ public class SecurityConfig {
                         // ✅ ADMIN + OWNER ENDPOINTS
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
 
-                        // ✅ ALL OTHER REQUESTS DENIED
+                        // ✅ DENY ALL OTHER REQUESTS
                         .anyRequest().denyAll()
                 );
 
+        // ✅ ADD JWT FILTER BEFORE SPRING SECURITY'S AUTH FILTER
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -11,7 +11,7 @@ import java.util.Date;
 public class JwtUtil {
 
     private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private final long EXP = 1000 * 60 * 60 * 24;
+    private final long EXP = 1000 * 60 * 60 * 24; // 24 hours
 
     public String generate(String email, String role) {
         return Jwts.builder()
