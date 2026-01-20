@@ -30,8 +30,9 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public ReservationResponse createReservation(ReservationRequest dto) {
 
-        RestaurantConfig config = configRepository.findById(1L)
+        RestaurantConfig config = configRepository.findFirstByOrderByIdAsc()
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant config"));
+
 
         List<Reservation> existing =
                 reservationRepository.findByReservationDateAndReservationTime(
