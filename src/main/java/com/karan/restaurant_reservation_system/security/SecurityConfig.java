@@ -21,13 +21,11 @@ public class SecurityConfig {
         this.jwtFilter = jwtFilter;
     }
 
-    // ✅ PASSWORD ENCODER
     @Bean
     public PasswordEncoder encoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ CORS CONFIG (LOVABLE + LOCAL DEV)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
@@ -40,17 +38,12 @@ public class SecurityConfig {
         ));
 
         config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
 
         config.setAllowedHeaders(List.of("*"));
-
-        config.setExposedHeaders(List.of(
-                "Authorization"
-        ));
-
+        config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
-
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =
@@ -60,36 +53,25 @@ public class SecurityConfig {
         return source;
     }
 
-
-    // ✅ SECURITY FILTER CHAIN
     @Bean
     public SecurityFilterChain filter(HttpSecurity http) throws Exception {
 
         http
-                // ✅ ENABLE CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // ✅ DISABLE CSRF (JWT)
                 .csrf(csrf -> csrf.disable())
-
-                // ✅ DISABLE DEFAULT SPRING SECURITY LOGIN
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-
-                // ✅ STATELESS SESSION (JWT)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // ✅ AUTHORIZATION RULES
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/reserve").permitAll()
                         .requestMatchers("/api/v1/admin/create-admin").hasRole("OWNER")
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 );
 
-        // ✅ JWT FILTER
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

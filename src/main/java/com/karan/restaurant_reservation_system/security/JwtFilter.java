@@ -1,9 +1,11 @@
 package com.karan.restaurant_reservation_system.security;
 
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
-import org.springframework.security.authentication.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -27,9 +29,25 @@ public class JwtFilter extends OncePerRequestFilter {
             HttpServletResponse res,
             FilterChain chain) throws ServletException, IOException {
 
+        String path = req.getRequestURI();
+
+        // ✅ PUBLIC ENDPOINTS (NO AUTH)
+        if (
+                path.startsWith("/api/v1/auth") ||
+                        path.startsWith("/api/v1/reserve")
+        ) {
+            chain.doFilter(req, res);
+            return;
+        }
+
         String header = req.getHeader("Authorization");
 
-        if (header != null && header.startsWith("Bearer ")) {
+        if (header == null || !header.startsWith("Bearer ")) {
+            chain.doFilter(req, res);
+            return;
+        }
+
+        try {
             Claims claims = jwtUtil.parse(header.substring(7));
             String role = claims.get("role", String.class);
 
@@ -41,7 +59,11 @@ public class JwtFilter extends OncePerRequestFilter {
                     );
 
             SecurityContextHolder.getContext().setAuthentication(auth);
+
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
         }
+
         chain.doFilter(req, res);
     }
 }
