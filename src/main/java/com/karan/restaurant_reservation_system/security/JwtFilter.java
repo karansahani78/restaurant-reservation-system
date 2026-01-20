@@ -31,9 +31,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = req.getRequestURI();
 
-        // ✅ PUBLIC ENDPOINTS (NO AUTH)
+        // ✅ PUBLIC ENDPOINTS (NO JWT EVER)
         if (
-                path.startsWith("/api/v1/auth") ||
+                "OPTIONS".equalsIgnoreCase(req.getMethod()) ||
+                        path.startsWith("/api/v1/auth") ||
                         path.startsWith("/api/v1/reserve")
         ) {
             chain.doFilter(req, res);

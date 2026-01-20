@@ -2,6 +2,7 @@ package com.karan.restaurant_reservation_system.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,20 +32,22 @@ public class SecurityConfig {
 
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "https://*.lovable.dev",
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "https://lovable.dev",
+                "https://www.lovable.dev",
                 "https://*.lovable.app"
         ));
 
         config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"
         ));
 
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(true);
-        config.setMaxAge(3600L);
+
+        // ✅ REQUIRED FOR LOVABLE IFRAME
+        config.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
@@ -65,10 +68,19 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        // ✅ ALWAYS ALLOW PREFLIGHT
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // ✅ PUBLIC
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/reserve").permitAll()
-                        .requestMatchers("/api/v1/admin/create-admin").hasRole("OWNER")
+                        .requestMatchers("/api/v1/reserve/**").permitAll()
+
+                        // ✅ OWNER ONLY
+                        .requestMatchers("/api/v1/admin/create-admin/**").hasRole("OWNER")
+
+                        // ✅ OWNER + ADMIN
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
+
                         .anyRequest().authenticated()
                 );
 
