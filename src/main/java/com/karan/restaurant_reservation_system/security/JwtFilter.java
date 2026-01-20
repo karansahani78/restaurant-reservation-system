@@ -31,7 +31,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = req.getRequestURI();
 
-        // ✅ NEVER APPLY JWT TO PUBLIC ENDPOINTS
+        // ✅ PUBLIC ENDPOINTS (NO AUTH)
         if (
                 "OPTIONS".equalsIgnoreCase(req.getMethod()) ||
                         path.startsWith("/api/v1/auth") ||
@@ -42,29 +42,22 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         String header = req.getHeader("Authorization");
-
         if (header == null || !header.startsWith("Bearer ")) {
             chain.doFilter(req, res);
             return;
         }
 
-        try {
-            Claims claims = jwtUtil.parse(header.substring(7));
-            String role = claims.get("role", String.class);
+        Claims claims = jwtUtil.parse(header.substring(7));
+        String role = claims.get("role", String.class);
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            claims.getSubject(),
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
-                    );
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(
+                        claims.getSubject(),
+                        null,
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                );
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
-
-        } catch (Exception e) {
-            SecurityContextHolder.clearContext();
-        }
-
+        SecurityContextHolder.getContext().setAuthentication(auth);
         chain.doFilter(req, res);
     }
 }
