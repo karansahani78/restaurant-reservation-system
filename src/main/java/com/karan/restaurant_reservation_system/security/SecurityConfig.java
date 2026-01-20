@@ -40,13 +40,10 @@ public class SecurityConfig {
         ));
 
         config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
         ));
 
-        config.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type"
-        ));
+        config.setAllowedHeaders(List.of("*"));
 
         config.setExposedHeaders(List.of(
                 "Authorization"
@@ -54,12 +51,15 @@ public class SecurityConfig {
 
         config.setAllowCredentials(true);
 
+        config.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 
         return source;
     }
+
 
     // ✅ SECURITY FILTER CHAIN
     @Bean
