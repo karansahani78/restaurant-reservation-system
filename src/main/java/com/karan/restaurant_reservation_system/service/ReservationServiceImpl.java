@@ -68,6 +68,7 @@ public class ReservationServiceImpl implements ReservationService {
                 .guestCount(saved.getGuestCount())             // ✅ FIX
                 .status(saved.getStatus())
                 .createdAt(saved.getCreatedAt())
+                .note(saved.getNote()) // ✅ ADD THIS
                 .message(
                         saved.getStatus() == ReservationStatus.WAITING
                                 ? "Added to waiting list"

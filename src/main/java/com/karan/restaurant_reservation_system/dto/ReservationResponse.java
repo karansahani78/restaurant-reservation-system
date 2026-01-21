@@ -25,7 +25,8 @@ public class ReservationResponse {
 
     // audit info (optional, still useful)
     private LocalDateTime createdAt;
-
+    // ✅ ADD THIS
+    private String note;
     // message used only for success page
     private String message;
 }
