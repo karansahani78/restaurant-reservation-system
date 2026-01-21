@@ -3,6 +3,7 @@ package com.karan.restaurant_reservation_system.controller;
 import com.karan.restaurant_reservation_system.dto.*;
 import com.karan.restaurant_reservation_system.service.AuthService;
 import com.karan.restaurant_reservation_system.service.PasswordResetService;
+import jakarta.annotation.security.PermitAll;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,15 +18,19 @@ public class AuthController {
         this.service = service;
     }
 
+    @PermitAll
     @PostMapping("/login")
     public AuthResponse login(@RequestBody AuthRequest req) {
         return service.login(req);
     }
+
+    @PermitAll
     @PostMapping("/forgot-password")
     public void forgot(@RequestParam String email) {
         passwordResetService.forgotPassword(email);
     }
 
+    @PermitAll
     @PostMapping("/reset-password")
     public void reset(@RequestBody ResetPasswordRequest req) {
         passwordResetService.resetPassword(req);
