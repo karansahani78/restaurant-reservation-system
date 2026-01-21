@@ -72,12 +72,10 @@ public class SecurityConfig {
                         // ✅ PREFLIGHT
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ PUBLIC AUTH (EXPLICIT — FIX FOR 403)
-                        .requestMatchers(
-                                "/api/v1/auth/login",
-                                "/api/v1/auth/forgot-password",
-                                "/api/v1/auth/reset-password"
-                        ).permitAll()
+                        // ✅ PUBLIC AUTH (POST ONLY — FIX FOR 403)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll()
 
                         // ✅ PUBLIC RESERVATION
                         .requestMatchers("/api/v1/reserve/**").permitAll()
