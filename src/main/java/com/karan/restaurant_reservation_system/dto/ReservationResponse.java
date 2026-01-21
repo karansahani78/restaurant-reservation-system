@@ -20,12 +20,13 @@ public class ReservationResponse {
     private LocalDate reservationDate;
     private LocalTime reservationTime;
     private int guestCount;
-
     private ReservationStatus status;
 
     // audit info (optional, still useful)
     private LocalDateTime createdAt;
-    // ✅ ADD THIS
+    // ✅ ADD THESE (IMPORTANT)
+    private String customerName;
+    private String phone;
     private String note;
     // message used only for success page
     private String message;

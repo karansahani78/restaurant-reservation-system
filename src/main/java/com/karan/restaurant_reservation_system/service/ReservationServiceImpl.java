@@ -21,8 +21,10 @@ public class ReservationServiceImpl implements ReservationService {
     private final ReservationRepository reservationRepository;
     private final RestaurantConfigRepository configRepository;
 
-    public ReservationServiceImpl(ReservationRepository reservationRepository,
-                                  RestaurantConfigRepository configRepository) {
+    public ReservationServiceImpl(
+            ReservationRepository reservationRepository,
+            RestaurantConfigRepository configRepository
+    ) {
         this.reservationRepository = reservationRepository;
         this.configRepository = configRepository;
     }
@@ -31,8 +33,7 @@ public class ReservationServiceImpl implements ReservationService {
     public ReservationResponse createReservation(ReservationRequest dto) {
 
         RestaurantConfig config = configRepository.findFirstByOrderByIdAsc()
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant config"));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant config not found"));
 
         List<Reservation> existing =
                 reservationRepository.findByReservationDateAndReservationTime(
@@ -63,12 +64,17 @@ public class ReservationServiceImpl implements ReservationService {
 
         return ReservationResponse.builder()
                 .id(saved.getId())
-                .reservationDate(saved.getReservationDate())   // ✅ FIX
-                .reservationTime(saved.getReservationTime())   // ✅ FIX
-                .guestCount(saved.getGuestCount())             // ✅ FIX
+                .reservationDate(saved.getReservationDate())
+                .reservationTime(saved.getReservationTime())
+                .guestCount(saved.getGuestCount())
                 .status(saved.getStatus())
                 .createdAt(saved.getCreatedAt())
-                .note(saved.getNote()) // ✅ ADD THIS
+
+                // ✅ INCLUDED FOR SUCCESS PAGE
+                .customerName(saved.getCustomerName())
+                .phone(saved.getPhone())
+                .note(saved.getNote())
+
                 .message(
                         saved.getStatus() == ReservationStatus.WAITING
                                 ? "Added to waiting list"
@@ -84,11 +90,17 @@ public class ReservationServiceImpl implements ReservationService {
                 .stream()
                 .map(r -> ReservationResponse.builder()
                         .id(r.getId())
-                        .reservationDate(r.getReservationDate())   // ✅ FIX
-                        .reservationTime(r.getReservationTime())   // ✅ FIX
-                        .guestCount(r.getGuestCount())             // ✅ FIX
+                        .reservationDate(r.getReservationDate())
+                        .reservationTime(r.getReservationTime())
+                        .guestCount(r.getGuestCount())
                         .status(r.getStatus())
                         .createdAt(r.getCreatedAt())
+
+                        // ✅ CRITICAL FIX FOR ADMIN DASHBOARD
+                        .customerName(r.getCustomerName())
+                        .phone(r.getPhone())
+                        .note(r.getNote())
+
                         .build()
                 )
                 .toList();
@@ -97,7 +109,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public void updateStatus(Long id, ReservationStatus status) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Reservation"));
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
 
         reservation.setStatus(status);
         reservationRepository.save(reservation);
