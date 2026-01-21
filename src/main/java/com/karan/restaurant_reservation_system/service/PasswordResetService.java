@@ -3,8 +3,10 @@ package com.karan.restaurant_reservation_system.service;
 import com.karan.restaurant_reservation_system.dto.ResetPasswordRequest;
 import com.karan.restaurant_reservation_system.entity.Admin;
 import com.karan.restaurant_reservation_system.entity.PasswordResetToken;
+import com.karan.restaurant_reservation_system.entity.Role;
 import com.karan.restaurant_reservation_system.repository.AdminRepository;
 import com.karan.restaurant_reservation_system.repository.PasswordResetTokenRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,6 +23,9 @@ public class PasswordResetService {
     private final PasswordEncoder encoder;
     private final JavaMailSender mail;
 
+    @Value("${spring.mail.username}")
+    private String mailFrom;
+
     public PasswordResetService(
             PasswordResetTokenRepository tokenRepo,
             AdminRepository adminRepo,
@@ -33,7 +38,15 @@ public class PasswordResetService {
         this.mail = mail;
     }
 
+    // ✅ ADMIN can request reset, OWNER blocked
     public void forgotPassword(String email) {
+
+        Admin admin = adminRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Admin not found"));
+
+        if (admin.getRole() == Role.OWNER) {
+            throw new RuntimeException("Owner password reset is not allowed");
+        }
 
         String token = UUID.randomUUID().toString();
 
@@ -45,6 +58,7 @@ public class PasswordResetService {
         ));
 
         SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setFrom(mailFrom);
         msg.setTo(email);
         msg.setSubject("Reset Password");
         msg.setText(
@@ -56,6 +70,7 @@ public class PasswordResetService {
         mail.send(msg);
     }
 
+    // ✅ Reset password using valid token
     public void resetPassword(ResetPasswordRequest req) {
 
         PasswordResetToken token = tokenRepo.findByToken(req.getToken())
