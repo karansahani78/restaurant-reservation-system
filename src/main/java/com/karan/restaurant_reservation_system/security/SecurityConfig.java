@@ -65,29 +65,29 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
+
+                // ✅ REQUIRED in Spring Security 7
                 .anonymous(org.springframework.security.config.Customizer.withDefaults())
+
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ PREFLIGHT
+                        // PREFLIGHT
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ PUBLIC AUTH (POST ONLY — FIX FOR 403)
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/forgot-password").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll()
+                        // ✅ FIX — PERMIT PATH (ALL METHODS)
+                        .requestMatchers("/api/v1/auth/**").permitAll()
 
-                        // ✅ PUBLIC RESERVATION
+                        // PUBLIC RESERVATION
                         .requestMatchers("/api/v1/reserve/**").permitAll()
 
-                        // ✅ OWNER ONLY
+                        // OWNER ONLY
                         .requestMatchers("/api/v1/admin/create-admin").hasRole("OWNER")
 
-                        // ✅ ADMIN + OWNER
+                        // ADMIN + OWNER
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
 
-                        // ❌ EVERYTHING ELSE
                         .anyRequest().authenticated()
                 );
 
