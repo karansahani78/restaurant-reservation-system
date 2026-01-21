@@ -45,7 +45,7 @@ public class SecurityConfig {
 
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(false); // ✅ IMPORTANT
+        config.setAllowCredentials(false);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source =
@@ -67,11 +67,17 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ ALWAYS ALLOW PREFLIGHT
+                        // ✅ PREFLIGHT
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ PUBLIC APIs
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        // ✅ PUBLIC AUTH (EXPLICIT — FIX FOR 403)
+                        .requestMatchers(
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/forgot-password",
+                                "/api/v1/auth/reset-password"
+                        ).permitAll()
+
+                        // ✅ PUBLIC RESERVATION
                         .requestMatchers("/api/v1/reserve/**").permitAll()
 
                         // ✅ OWNER ONLY
@@ -80,7 +86,7 @@ public class SecurityConfig {
                         // ✅ ADMIN + OWNER
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
 
-                        // ❌ BLOCK EVERYTHING ELSE
+                        // ❌ EVERYTHING ELSE
                         .anyRequest().authenticated()
                 );
 
