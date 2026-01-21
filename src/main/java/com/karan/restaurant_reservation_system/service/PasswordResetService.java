@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
 @Service
 public class PasswordResetService {
 
@@ -23,7 +22,7 @@ public class PasswordResetService {
     private final PasswordEncoder encoder;
     private final JavaMailSender mail;
 
-    @Value("${spring.mail.from}")
+    @Value("${spring.mail.username}")
     private String mailFrom;
 
     public PasswordResetService(
@@ -58,7 +57,7 @@ public class PasswordResetService {
         ));
 
         SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setFrom(mailFrom);
+        msg.setFrom(mailFrom);   // ✅ Gmail-safe
         msg.setTo(email);
         msg.setSubject("Reset Password");
         msg.setText(
@@ -70,7 +69,6 @@ public class PasswordResetService {
         mail.send(msg);
     }
 
-    // ✅ Reset password using valid token
     public void resetPassword(ResetPasswordRequest req) {
 
         PasswordResetToken token = tokenRepo.findByToken(req.getToken())
