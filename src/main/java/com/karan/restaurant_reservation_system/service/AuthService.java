@@ -18,8 +18,7 @@ public class AuthService {
     public AuthService(AdminRepository adminRepo,
                        PasswordResetTokenRepository tokenRepo,
                        PasswordEncoder encoder,
-                       JwtUtil jwtUtil,
-                       JavaMailSender mail) {
+                       JwtUtil jwtUtil) {
         this.adminRepo = adminRepo;
         this.encoder = encoder;
         this.jwtUtil = jwtUtil;

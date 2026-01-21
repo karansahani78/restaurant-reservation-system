@@ -26,8 +26,8 @@ public class AuthController {
 
     @PermitAll
     @PostMapping("/forgot-password")
-    public void forgot(@RequestParam String email) {
-        passwordResetService.forgotPassword(email);
+    public void forgot(@RequestBody ForgotPasswordRequest request) {
+        passwordResetService.forgotPassword(request.getEmail());
     }
 
     @PermitAll
