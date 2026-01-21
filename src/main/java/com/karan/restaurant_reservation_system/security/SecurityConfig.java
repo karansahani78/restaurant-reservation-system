@@ -35,7 +35,8 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "https://*.lovable.dev",
-                "https://*.lovable.app"
+                "https://*.lovable.app",
+                "https://*.vercel.app"
         ));
 
         config.setAllowedMethods(List.of(
