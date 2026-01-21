@@ -23,7 +23,7 @@ public class PasswordResetService {
     private final PasswordEncoder encoder;
     private final JavaMailSender mail;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.from}")
     private String mailFrom;
 
     public PasswordResetService(
