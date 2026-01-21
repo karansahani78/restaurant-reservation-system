@@ -6,7 +6,6 @@ import com.karan.restaurant_reservation_system.entity.PasswordResetToken;
 import com.karan.restaurant_reservation_system.entity.Role;
 import com.karan.restaurant_reservation_system.repository.AdminRepository;
 import com.karan.restaurant_reservation_system.repository.PasswordResetTokenRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,16 +13,16 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
 @Service
 public class PasswordResetService {
+
+    private static final String FROM_EMAIL = "codewithkaran723@gmail.com";
 
     private final PasswordResetTokenRepository tokenRepo;
     private final AdminRepository adminRepo;
     private final PasswordEncoder encoder;
     private final JavaMailSender mail;
-
-    @Value("${spring.mail.username}")
-    private String mailFrom;
 
     public PasswordResetService(
             PasswordResetTokenRepository tokenRepo,
@@ -57,7 +56,7 @@ public class PasswordResetService {
         ));
 
         SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setFrom(mailFrom);   // ✅ Gmail-safe
+        msg.setFrom(FROM_EMAIL);
         msg.setTo(email);
         msg.setSubject("Reset Password");
         msg.setText(
@@ -69,6 +68,7 @@ public class PasswordResetService {
         mail.send(msg);
     }
 
+    // ✅ Reset password using valid token
     public void resetPassword(ResetPasswordRequest req) {
 
         PasswordResetToken token = tokenRepo.findByToken(req.getToken())
