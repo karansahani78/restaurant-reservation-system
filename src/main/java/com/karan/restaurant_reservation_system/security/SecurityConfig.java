@@ -63,31 +63,22 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
+
+                // 🔥 THIS LINE FIXES 403 FOR FORGOT PASSWORD
+                .anonymous(anonymous -> anonymous.disable())
+
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
-
-                // ✅ REQUIRED in Spring Security 7
-                .anonymous(org.springframework.security.config.Customizer.withDefaults())
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // PREFLIGHT
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // ✅ FIX — PERMIT PATH (ALL METHODS)
                         .requestMatchers("/api/v1/auth/**").permitAll()
-
-                        // PUBLIC RESERVATION
                         .requestMatchers("/api/v1/reserve/**").permitAll()
-
-                        // OWNER ONLY
                         .requestMatchers("/api/v1/admin/create-admin").hasRole("OWNER")
-
-                        // ADMIN + OWNER
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
-
                         .anyRequest().authenticated()
                 );
 
