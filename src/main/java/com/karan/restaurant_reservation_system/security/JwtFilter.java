@@ -31,7 +31,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = req.getRequestURI();
 
-        // ✅ PUBLIC ENDPOINTS (ABSOLUTELY NO JWT PROCESSING)
+        // ✅ PUBLIC ENDPOINTS — NEVER TOUCH JWT
         if (
                 "OPTIONS".equalsIgnoreCase(req.getMethod()) ||
                         path.startsWith("/api/v1/auth") ||
@@ -62,7 +62,6 @@ public class JwtFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(auth);
 
         } catch (Exception e) {
-            // 🔑 THIS LINE SAVES YOU
             SecurityContextHolder.clearContext();
         }
 

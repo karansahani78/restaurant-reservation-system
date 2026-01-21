@@ -31,6 +31,7 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOriginPatterns(List.of(
@@ -40,14 +41,19 @@ public class SecurityConfig {
                 "https://*.vercel.app"
         ));
 
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+        ));
+
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(false);
         config.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 
@@ -63,11 +69,25 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+
+                        // ✅ PREFLIGHT
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+
+                        // ✅ AUTH (EXPLICIT — FIXES RENDER 403)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/reset-password").permitAll()
+
+                        // ✅ PUBLIC RESERVATION
                         .requestMatchers("/api/v1/reserve/**").permitAll()
+
+                        // ✅ OWNER ONLY
                         .requestMatchers("/api/v1/admin/create-admin").hasRole("OWNER")
+
+                        // ✅ ADMIN + OWNER
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("OWNER", "ADMIN")
+
+                        // 🔒 EVERYTHING ELSE
                         .anyRequest().authenticated()
                 );
 
