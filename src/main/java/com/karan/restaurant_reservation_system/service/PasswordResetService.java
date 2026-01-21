@@ -6,37 +6,39 @@ import com.karan.restaurant_reservation_system.entity.PasswordResetToken;
 import com.karan.restaurant_reservation_system.entity.Role;
 import com.karan.restaurant_reservation_system.repository.AdminRepository;
 import com.karan.restaurant_reservation_system.repository.PasswordResetTokenRepository;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class PasswordResetService {
+
+    @Value("${brevo.api.key}")
+    private String brevoApiKey;
 
     private static final String FROM_EMAIL = "codewithkaran723@gmail.com";
 
     private final PasswordResetTokenRepository tokenRepo;
     private final AdminRepository adminRepo;
     private final PasswordEncoder encoder;
-    private final JavaMailSender mail;
+
+    private final RestTemplate restTemplate = new RestTemplate();
 
     public PasswordResetService(
             PasswordResetTokenRepository tokenRepo,
             AdminRepository adminRepo,
-            PasswordEncoder encoder,
-            JavaMailSender mail) {
+            PasswordEncoder encoder) {
 
         this.tokenRepo = tokenRepo;
         this.adminRepo = adminRepo;
         this.encoder = encoder;
-        this.mail = mail;
     }
 
-    // ✅ ADMIN can request reset, OWNER blocked
     public void forgotPassword(String email) {
 
         Admin admin = adminRepo.findByEmail(email)
@@ -55,20 +57,36 @@ public class PasswordResetService {
                 LocalDateTime.now().plusMinutes(15)
         ));
 
-        SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setFrom(FROM_EMAIL);
-        msg.setTo(email);
-        msg.setSubject("Reset Password");
-        msg.setText(
-                "Reset your password using this link:\n\n" +
-                        "https://frontend/reset?token=" + token +
-                        "\n\nThis link expires in 15 minutes."
-        );
-
-        mail.send(msg);
+        sendEmail(email, token);
     }
 
-    // ✅ Reset password using valid token
+    private void sendEmail(String to, String token) {
+
+        String url = "https://api.brevo.com/v3/smtp/email";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("api-key", brevoApiKey);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("sender", Map.of(
+                "email", FROM_EMAIL,
+                "name", "Malt Restaurant"
+        ));
+        payload.put("to", List.of(Map.of("email", to)));
+        payload.put("subject", "Reset Password");
+        payload.put("htmlContent",
+                "<p>Reset your password using the link below:</p>" +
+                        "<p><a href='https://frontend/reset?token=" + token + "'>Reset Password</a></p>" +
+                        "<p>This link expires in 15 minutes.</p>"
+        );
+
+        HttpEntity<Map<String, Object>> request =
+                new HttpEntity<>(payload, headers);
+
+        restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+    }
+
     public void resetPassword(ResetPasswordRequest req) {
 
         PasswordResetToken token = tokenRepo.findByToken(req.getToken())
