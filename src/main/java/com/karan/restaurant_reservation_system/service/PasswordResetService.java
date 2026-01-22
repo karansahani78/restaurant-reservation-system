@@ -22,6 +22,7 @@ public class PasswordResetService {
     private String brevoApiKey;
 
     private static final String FROM_EMAIL = "codewithkaran723@gmail.com";
+    private static final String FROM_NAME = "Malt Restaurant";
 
     private final PasswordResetTokenRepository tokenRepo;
     private final AdminRepository adminRepo;
@@ -39,6 +40,9 @@ public class PasswordResetService {
         this.encoder = encoder;
     }
 
+    // ===============================
+    // FORGOT PASSWORD
+    // ===============================
     public void forgotPassword(String email) {
 
         Admin admin = adminRepo.findByEmail(email)
@@ -57,36 +61,52 @@ public class PasswordResetService {
                 LocalDateTime.now().plusMinutes(15)
         ));
 
-        sendEmail(email, token);
+        sendResetEmail(email, token);
     }
 
-    private void sendEmail(String to, String token) {
+    // ===============================
+    // SEND EMAIL VIA BREVO HTTP API
+    // ===============================
+    private void sendResetEmail(String toEmail, String token) {
 
         String url = "https://api.brevo.com/v3/smtp/email";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // 🔥 THIS HEADER IS THE KEY FIX
         headers.set("api-key", brevoApiKey);
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("sender", Map.of(
                 "email", FROM_EMAIL,
-                "name", "Malt Restaurant"
+                "name", FROM_NAME
         ));
-        payload.put("to", List.of(Map.of("email", to)));
-        payload.put("subject", "Reset Password");
-        payload.put("htmlContent",
-                "<p>Reset your password using the link below:</p>" +
+        payload.put("to", List.of(
+                Map.of("email", toEmail)
+        ));
+        payload.put("subject", "Reset Your Password");
+        payload.put(
+                "htmlContent",
+                "<p>Click the link below to reset your password:</p>" +
                         "<p><a href='https://frontend/reset?token=" + token + "'>Reset Password</a></p>" +
-                        "<p>This link expires in 15 minutes.</p>"
+                        "<p>This link will expire in 15 minutes.</p>"
         );
 
         HttpEntity<Map<String, Object>> request =
                 new HttpEntity<>(payload, headers);
 
-        restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+        ResponseEntity<String> response =
+                restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Failed to send reset email via Brevo");
+        }
     }
 
+    // ===============================
+    // RESET PASSWORD
+    // ===============================
     public void resetPassword(ResetPasswordRequest req) {
 
         PasswordResetToken token = tokenRepo.findByToken(req.getToken())
