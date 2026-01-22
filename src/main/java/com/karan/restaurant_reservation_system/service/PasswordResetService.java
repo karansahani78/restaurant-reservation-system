@@ -21,6 +21,10 @@ public class PasswordResetService {
     @Value("${brevo.api.key}")
     private String brevoApiKey;
 
+    // 🔥 READ FRONTEND URL FROM ENV / PROPERTIES
+    @Value("${frontend.url}")
+    private String frontendUrl;
+
     private static final String FROM_EMAIL = "codewithkaran723@gmail.com";
     private static final String FROM_NAME = "Malt Restaurant";
 
@@ -74,8 +78,11 @@ public class PasswordResetService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // 🔥 THIS HEADER IS THE KEY FIX
+        // ✅ REQUIRED BY BREVO
         headers.set("api-key", brevoApiKey);
+
+        // 🔥 CORRECT RESET LINK
+        String resetLink = frontendUrl + "/reset-password?token=" + token;
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("sender", Map.of(
@@ -89,7 +96,7 @@ public class PasswordResetService {
         payload.put(
                 "htmlContent",
                 "<p>Click the link below to reset your password:</p>" +
-                        "<p><a href='https://frontend/reset?token=" + token + "'>Reset Password</a></p>" +
+                        "<p><a href='" + resetLink + "'>Reset Password</a></p>" +
                         "<p>This link will expire in 15 minutes.</p>"
         );
 
